@@ -12,7 +12,7 @@ fi
 playernum=$1
 
 #TODO set this to where your code and jar file root dir is
-BASEDIR=/Users/danielarturi/Desktop/McGill Fall 2024/COMP 512/Assignments/P2/comp512p2
+BASEDIR=$HOME/comp512/p2
 
 #TODO update your group number here in place of XX
 group=23
