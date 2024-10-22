@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="comp512p2">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/comp512p2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
