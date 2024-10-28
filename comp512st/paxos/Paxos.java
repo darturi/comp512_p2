@@ -29,6 +29,10 @@ public class Paxos
 	HashSet<String> majorityAcceptAckHashSet;
 	String myProcess;
 	int sizeOfGroup;
+	private boolean hasMajorityPromise;
+	private boolean hasMajorityAcceptAck;
+	private boolean shouldBail;
+
 
 
 
@@ -55,6 +59,8 @@ public class Paxos
         acceptorThread.run();
     }
 
+	synchronized private Object safeValueAccess(){return this.value;}
+
 	// This is what the application layer is going to call to send a message/value, such as the player and the move
 	synchronized public void broadcastTOMsg(Object val)
 	{
@@ -70,11 +76,57 @@ public class Paxos
 		synchronized (this.majorityPromiseHashSet) {this.majorityPromiseHashSet.clear();}
 		synchronized (this.majorityAcceptAckHashSet) {this.majorityAcceptAckHashSet.clear();}
 
-		ProposerThread proposerThread = new ProposerThread(this.BID.get(), val, this.gcl);
-		proposerThread.start();
+		MessageObject proposalMessage;
+		try {
+			proposalMessage = new MessageObject(MessageType.PROPOSE, this.BID.get());
+		} catch (InstantiationException e) {
+			throw new RuntimeException(e);
+		}
 
+		// multicast proposal message
+		gcl.broadcastMsg(proposalMessage);
 
-		// gcl.broadcastMsg(val);
+		// Wait for majority of promises (value may change) TODO: ADD TIMEOUT HERE
+		while (!this.hasMajorityPromise && !this.shouldBail) {
+			try {
+				wait(); // COULD ADD A TIMER TO THIS
+			} catch (InterruptedException e) {
+				throw new RuntimeException(e);
+			}
+		}
+		// TODO: ADD LOGIC TO CATCH BAIL SIGNAL
+
+		// Create accept_q message
+		MessageObject accept_qMessage;
+		try {
+			accept_qMessage = new MessageObject(MessageType.ACCEPT_Q, this.BID.get(), safeValueAccess());
+		} catch (InstantiationException e) {
+			throw new RuntimeException(e);
+		}
+
+		// Multicast accept_q message
+		gcl.broadcastMsg(accept_qMessage);
+
+		// Wait for majority of AcceptAck's
+		while (!this.hasMajorityAcceptAck && !this.shouldBail) {
+			try {
+				wait();
+			} catch (InterruptedException e) {
+				throw new RuntimeException(e);
+			}
+		}
+		// TODO: ADD LOGIC TO CATCH BAIL SIGNAL
+
+		// Create Confirm Message
+		MessageObject confirmMessage;
+		try {
+			confirmMessage = new MessageObject(MessageType.CONFIRM, this.BID.get());
+		} catch (InstantiationException e) {
+			throw new RuntimeException(e);
+		}
+
+		// Broadcast confirm message
+		gcl.broadcastMsg(confirmMessage);
 	}
 
 	// This is what the application layer is calling to figure out what is the next message in the total order.
