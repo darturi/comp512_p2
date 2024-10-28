@@ -64,6 +64,8 @@ public class TreasureIslandApp implements Runnable
 
 	public synchronized void move(int playerNum, char direction, boolean displayIsland)
 	{
+		// CREATE PAXOS HERE
+
 		ti.move(playerNum, direction);
 		if(displayIsland)
 			ti.displayIsland();
