@@ -29,9 +29,17 @@ public class Paxos
 
 	Set<String> accept_processes = new HashSet<>();
 
+	Set<String> refused_processes = new HashSet<>();
+
+	Set<String> denied_processes = new HashSet<>();
+
 	volatile boolean majority_promised = false;
 
 	volatile boolean majority_accepted = false;
+
+	volatile boolean majority_refused = false;
+
+	volatile boolean majority_denied = false;
 
 	int maxBid = -1;
 
@@ -68,8 +76,12 @@ public class Paxos
 		int ballotID = bID.incrementAndGet();
 		promised_processes.clear();
 		accept_processes.clear();
+		denied_processes.clear();
+		refused_processes.clear();
 		majority_promised = false;
 		majority_accepted = false;
+		majority_refused = false;
+		majority_denied = false;
 		previous_val = null;
 		previous_id = -1;
 		// initialize proposal
@@ -84,6 +96,12 @@ public class Paxos
 			if (System.currentTimeMillis() - startTime > TIMEOUT) {
 				System.out.println("Timeout reached, retrying proposal with new ballot ID.");
 				broadcastTOMsg(val);
+				return;
+			}
+			if (this.majority_refused){
+				System.out.println("Majority Refused, retrying proposal with new ballot ID.");
+				broadcastTOMsg(val);
+				return;
 			}
 			// blocks here waiting for majority to promise
 		}
@@ -101,6 +119,12 @@ public class Paxos
 			if (System.currentTimeMillis() - startTime > TIMEOUT) {
 				System.out.println("Timeout reached, retrying proposal with new ballot ID.");
 				broadcastTOMsg(val);
+				return;
+			}
+			if (this.majority_denied){
+				System.out.println("Majority Denied, retrying proposal with new ballot ID.");
+				broadcastTOMsg(val);
+				return;
 			}
 		}
 
@@ -173,7 +197,12 @@ public class Paxos
 				return null;
 			}
 			case REFUSE -> {
-				//do nothing for now, handled by timeout. TODO: if later want better performance
+				if (message.ballotID1 == bID.get()) {
+					this.refused_processes.add(senderProcess);
+					if (refused_processes.size() > this.num_processes/2) {
+						majority_refused = true;
+					}
+				}
 				return null;
 			}
 			case CONFIRM -> {
@@ -194,6 +223,12 @@ public class Paxos
 			}
 			case DENY -> {
 				//do nothing for now, handled by timeout. TODO: if later want better performance
+				if (message.ballotID1 == bID.get()) {
+					this.denied_processes.add(senderProcess);
+					if (denied_processes.size() > this.num_processes / 2) {
+						majority_denied = true;
+					}
+				}
 				return null;
 			}
 			default -> {
