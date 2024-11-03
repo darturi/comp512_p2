@@ -89,23 +89,23 @@ public class Paxos
 		long TIMEOUT = 750;
 		// try to send proposal
 		gcl.broadcastMsg(proposal);
-
+		failCheck.checkFailure(FailCheck.FailureType.AFTERSENDPROPOSE);
 		// enter a loop to check the promised_processes
 		long startTime = System.currentTimeMillis();
 		while(!majority_promised) {
 			if (System.currentTimeMillis() - startTime > TIMEOUT) {
-				System.out.println("Timeout reached, retrying proposal with new ballot ID.");
+//				System.out.println("Timeout reached, retrying proposal with new ballot ID.");
 				broadcastTOMsg(val);
 				return;
 			}
 			if (this.majority_refused){
-				System.out.println("Majority Refused, retrying proposal with new ballot ID.");
+//				System.out.println("Majority Refused, retrying proposal with new ballot ID.");
 				broadcastTOMsg(val);
 				return;
 			}
 			// blocks here waiting for majority to promise
 		}
-		System.out.print("promised");
+		failCheck.checkFailure(FailCheck.FailureType.AFTERBECOMINGLEADER);
 		Message accept_request = new Message(ballotID, MessageType.ACCEPT, val);
 
 		if (previous_val!=null) {
@@ -117,17 +117,17 @@ public class Paxos
 
 		while(!majority_accepted) {
 			if (System.currentTimeMillis() - startTime > TIMEOUT) {
-				System.out.println("Timeout reached, retrying proposal with new ballot ID.");
+//				System.out.println("Timeout reached, retrying proposal with new ballot ID.");
 				broadcastTOMsg(val);
 				return;
 			}
 			if (this.majority_denied){
-				System.out.println("Majority Denied, retrying proposal with new ballot ID.");
+//				System.out.println("Majority Denied, retrying proposal with new ballot ID.");
 				broadcastTOMsg(val);
 				return;
 			}
 		}
-
+		failCheck.checkFailure(FailCheck.FailureType.AFTERVALUEACCEPT);
 		Message confirm = new Message(ballotID, MessageType.CONFIRM, val);
 		gcl.broadcastMsg(confirm);
 
@@ -144,21 +144,25 @@ public class Paxos
 		GCMessage gcmsg = gcl.readGCMessage();
 		String senderProcess = gcmsg.senderProcess;
 		Message message = (Message)gcmsg.val;
-		System.out.print("got message with type"+message.type);
+//		System.out.print("got message with type"+message.type);
 		switch (message.type) {
 			case PROPOSE -> {
+				failCheck.checkFailure(FailCheck.FailureType.RECEIVEPROPOSE);
 				if (message.ballotID1 > maxBid) {
 					if (accepted_val != null) {
 						Message promise = new Message(message.ballotID1, accepted_id, MessageType.PROMISE, accepted_val);
 						gcl.sendMsg(promise, senderProcess);
+						failCheck.checkFailure(FailCheck.FailureType.AFTERSENDVOTE);
 					} else {
 						Message promise = new Message(message.ballotID1, MessageType.PROMISE);
 						gcl.sendMsg(promise, senderProcess);
+						failCheck.checkFailure(FailCheck.FailureType.AFTERSENDVOTE);
 					}
 					maxBid = message.ballotID1;
 				} else {
 					Message refuse = new Message(maxBid,MessageType.REFUSE);
 					gcl.sendMsg(refuse, senderProcess);
+					failCheck.checkFailure(FailCheck.FailureType.AFTERSENDVOTE);
 				}
 				return null;
 			}
@@ -222,7 +226,6 @@ public class Paxos
 				}
 			}
 			case DENY -> {
-				//do nothing for now, handled by timeout. TODO: if later want better performance
 				if (message.ballotID1 == bID.get()) {
 					this.denied_processes.add(senderProcess);
 					if (denied_processes.size() > this.num_processes / 2) {

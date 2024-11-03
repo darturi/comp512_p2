@@ -168,6 +168,7 @@ public class TreasureIslandApp implements Runnable
 		}
 
 		logger.info("Shutting down Paxos");
+		ta.tiThread.join(1000);
 		ta.keepExploring = false;
 		ta.tiThread.join(1000); // Wait maximum 1s for the app to process any more incomming messages that was in the queue.
 		paxos.shutdownPaxos(); // shutdown paxos.

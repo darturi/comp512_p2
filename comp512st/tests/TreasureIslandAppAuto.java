@@ -27,10 +27,13 @@ public class TreasureIslandAppAuto implements Runnable
 	boolean keepExploring;
 	boolean updateDisplay;
 
+	int num_moves;
+
 	Paxos paxos;
 
 	public TreasureIslandAppAuto(Paxos paxos, Logger logger, String gameId, int numPlayers, int yourPlayer)
 	{
+		this.num_moves = 0;
 		this.paxos = paxos;
 		this.logger = logger;
 		this.keepExploring = true;
@@ -242,7 +245,8 @@ public class TreasureIslandAppAuto implements Runnable
 				case "D": // Capture the move and broadcast it to everyone along with the player number.
 					// Remember, this should block till this move has been accepted by the majority.
 					//	The logic for that should be built into the paxos module.
-					paxos.broadcastTOMsg(new Object[]{ playerNum, cmd.charAt(0) });
+					ta.num_moves++;
+					paxos.broadcastTOMsg(new Object[]{ playerNum, cmd.charAt(0), ta.num_moves});
 					break;
 				case "FI": // The process is to fail immediately.
 					failCheck.setFailurePoint(FailCheck.FailureType.IMMEDIATE);
