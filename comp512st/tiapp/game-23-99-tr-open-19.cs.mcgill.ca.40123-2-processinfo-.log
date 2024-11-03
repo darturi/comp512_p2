@@ -1,7 +1,0 @@
-Oct 22, 2024 3:13:40.229780708 PM comp512st.tiapp.TreasureIslandApp main INFO: Started with arguments : [tr-open-19.cs.mcgill.ca:40123, tr-open-18.cs.mcgill.ca:40123,tr-open-19.cs.mcgill.ca:40123, game-23-99, 2, 2]
-Oct 22, 2024 3:13:40.238623946 PM comp512.utils.FailCheck <init> INFO: Initializing failure check emulation setup....
-Oct 22, 2024 3:13:40.261839504 PM comp512.gcl.GCL <init> INFO: Host tr-open-19.cs.mcgill.ca/10.69.38.169:40123
-Oct 22, 2024 3:13:40.262314292 PM comp512.gcl.GCL <init> INFO: Initializing outbox despatcher threads.
-Oct 22, 2024 3:13:40.263389260 PM comp512.gcl.GCL$GCLOutBoxDespatcher run INFO: tr-open-18.cs.mcgill.ca:40123: Starting outbox despatch thread for process.
-Oct 22, 2024 3:13:40.263389409 PM comp512.gcl.GCL$GCLOutBoxDespatcher run INFO: tr-open-19.cs.mcgill.ca:40123: Starting outbox despatch thread for process.
-Oct 22, 2024 3:13:40.271455056 PM comp512.ti.TreasureIsland <init> INFO: Treasure Island initialized.
