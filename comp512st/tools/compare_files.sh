@@ -6,12 +6,15 @@ if [ "$#" -lt 2 ]; then
     exit 1
 fi
 
-# Use the first file as a reference
+# Use the first file as a reference and strip the first line
 reference_file="$1"
+reference_content=$(tail -n +2 "$reference_file")
 
-# Loop through all provided files and compare with the reference file
+# Loop through all provided files, ignoring the first line
 for file in "$@"; do
-    if ! cmp -s "$reference_file" "$file"; then
+    file_content=$(tail -n +2 "$file")
+
+    if [ "$reference_content" != "$file_content" ]; then
         echo "differences"
         exit 0
     fi
