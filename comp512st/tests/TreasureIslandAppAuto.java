@@ -27,10 +27,13 @@ public class TreasureIslandAppAuto implements Runnable
 	boolean keepExploring;
 	boolean updateDisplay;
 
+	int num_moves;
+
 	Paxos paxos;
 
 	public TreasureIslandAppAuto(Paxos paxos, Logger logger, String gameId, int numPlayers, int yourPlayer)
 	{
+		this.num_moves = 0;
 		this.paxos = paxos;
 		this.logger = logger;
 		this.keepExploring = true;
@@ -60,6 +63,9 @@ public class TreasureIslandAppAuto implements Runnable
 			try
 			{
 				Object[] info  = (Object[]) paxos.acceptTOMsg();
+				if (info == null) {
+					continue;
+				}
 				logger.fine("Received :" + Arrays.toString(info));
 				move((Integer)info[0], (Character)info[1], updateDisplay);
 				//displayIsland(); //we do not want to keep constantly refreshing the output display.
@@ -182,7 +188,6 @@ public class TreasureIslandAppAuto implements Runnable
 		System.setProperty("java.util.logging.SimpleFormatter.format", "%1$tb %1$td, %1$tY %1$tl:%1$tM:%1$tS.%1$tN %1$Tp %2$s %4$s: %5$s%6$s%n");
 		Logger logger = Logger.getLogger("TreasureIsland");
 		logger.setLevel(Level.FINE);
-
 		/*
 		Handler consoleHandler = new ConsoleHandler();
 		//logger.setLevel(Level.WARNING);
@@ -194,6 +199,7 @@ public class TreasureIslandAppAuto implements Runnable
 		*/
 
 		// Send logging to a file.
+		Logger time_logger = Logger.getLogger("Time" + '-' + args[4]);
     try
     {
       FileHandler fh = new FileHandler(args[2]+"-"+args[0].replace(':','.')+ '-' + args[4] + "-processinfo-.log");
@@ -201,6 +207,15 @@ public class TreasureIslandAppAuto implements Runnable
 			SimpleFormatter formatter = new SimpleFormatter();
 			fh.setFormatter(formatter); 
       logger.setUseParentHandlers(false);
+	  FileHandler time_fh = new FileHandler(args[2]+"-"+args[0].replace(':','.')+ '-' + args[4] + "-time-.log");
+	  time_logger.addHandler(time_fh);
+	  time_logger.setLevel(Level.INFO);
+	  time_logger.setUseParentHandlers(false);
+		time_fh.setFormatter(new SimpleFormatter() {
+			public synchronized String format(LogRecord var1) {
+				return var1.getMessage() + "\n";
+			}
+		});
     }
     catch(SecurityException se)
     { throw new RuntimeException("SecurityException while initializing process log file."); }
@@ -242,7 +257,11 @@ public class TreasureIslandAppAuto implements Runnable
 				case "D": // Capture the move and broadcast it to everyone along with the player number.
 					// Remember, this should block till this move has been accepted by the majority.
 					//	The logic for that should be built into the paxos module.
-					paxos.broadcastTOMsg(new Object[]{ playerNum, cmd.charAt(0) });
+					ta.num_moves++;
+					long startTime = System.nanoTime();
+					paxos.broadcastTOMsg(new Object[]{ playerNum, cmd.charAt(0), ta.num_moves});
+					long elapsedTime = System.nanoTime() - startTime;
+					time_logger.info("Elapsed time for broadcastTOMsg (" + ta.num_moves + ") : " + elapsedTime / 1_000_000 + " ms");
 					break;
 				case "FI": // The process is to fail immediately.
 					failCheck.setFailurePoint(FailCheck.FailureType.IMMEDIATE);
@@ -269,7 +288,7 @@ public class TreasureIslandAppAuto implements Runnable
 
 		logger.info("Done with all my moves ..."); // we just chill for a bit to ensure we got all the messages from others before we shutdown.
 																							// May have to increase this for higher maxmoves and smaller intervals.
-		try{ Thread.sleep(5000); } catch (InterruptedException ie) { logger.log(Level.SEVERE, "I got InterruptedException when I was chilling after all my moves.", ie); }
+		try{ Thread.sleep(50000); } catch (InterruptedException ie) { logger.log(Level.SEVERE, "I got InterruptedException when I was chilling after all my moves.", ie); }
 		ta.keepExploring = false;
 		ta.tiThread.join(1000); // Wait maximum 1s for the app to process any more incomming messages that was in the queue.
 		logger.info("Shutting down Paxos");

@@ -27,7 +27,7 @@ gameid=game-$group-99
 # Remember to start the scripts of corresponding players from the corresponding servers.
 # comment out process3 if you are only playing 2 players, etc.
 export process1=tr-open-18.cs.mcgill.ca:401$group
-export process2=tr-open-19.cs.mcgill.ca:401$group
+export process2=tr-open-19.cs.mcgill.ca:402$group
 #export process3=server3:403$group
 #export process4=server4:404$group
 #export process5=server5:405$group
