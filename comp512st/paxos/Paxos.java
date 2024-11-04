@@ -197,6 +197,9 @@ public class Paxos
 					accepted_id = message.ballotID1;
 					Message acceptAck = new Message(message.ballotID1, MessageType.ACCEPTACK);
 					gcl.sendMsg(acceptAck, senderProcess);
+				} else {
+					Message denial = new Message(message.ballotID1, MessageType.DENY);
+					gcl.sendMsg(denial, senderProcess);
 				}
 				return null;
 			}
